@@ -1,0 +1,291 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Vietnamese Educational Management System Design Tokens */
+
+@layer base {
+  :root {
+    /* Core Background & Text */
+    --background: 240 10% 98%;
+    --foreground: 215 25% 15%;
+
+    /* Card System */
+    --card: 0 0% 100%;
+    --card-foreground: 215 25% 15%;
+
+    /* Popover */
+    --popover: 0 0% 100%;
+    --popover-foreground: 215 25% 15%;
+
+    /* Educational Blue Theme */
+    --primary: 210 85% 45%;
+    --primary-light: 210 85% 55%;
+    --primary-dark: 210 85% 35%;
+    --primary-foreground: 0 0% 100%;
+
+    /* Success Green for Good Scores */
+    --success: 145 65% 45%;
+    --success-light: 145 65% 55%;
+    --success-foreground: 0 0% 100%;
+
+    /* Warning Orange for Average */
+    --warning: 35 85% 55%;
+    --warning-light: 35 85% 65%;
+    --warning-foreground: 0 0% 100%;
+
+    /* Error Red for Poor Performance */
+    --error: 0 75% 55%;
+    --error-light: 0 75% 65%;
+    --error-foreground: 0 0% 100%;
+
+    /* Secondary Grays */
+    --secondary: 215 15% 95%;
+    --secondary-foreground: 215 25% 25%;
+
+    --muted: 215 15% 96%;
+    --muted-foreground: 215 15% 45%;
+
+    --accent: 210 50% 92%;
+    --accent-foreground: 215 25% 15%;
+
+    /* System Colors */
+    --destructive: 0 75% 55%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 215 20% 88%;
+    --input: 215 20% 90%;
+    --ring: 210 85% 45%;
+
+    /* Design System */
+    --radius: 0.75rem;
+
+    /* Educational Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-light)));
+    --gradient-success: linear-gradient(135deg, hsl(var(--success)), hsl(var(--success-light)));
+    --gradient-warning: linear-gradient(135deg, hsl(var(--warning)), hsl(var(--warning-light)));
+    --gradient-subtle: linear-gradient(180deg, hsl(var(--background)), hsl(var(--muted)));
+
+    /* Shadows */
+    --shadow-card: 0 2px 10px -2px hsl(var(--primary) / 0.1);
+    --shadow-elevated: 0 8px 30px -8px hsl(var(--primary) / 0.15);
+    --shadow-ranking: 0 4px 20px -4px hsl(var(--warning) / 0.2);
+
+    /* Sidebar Variables */
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 215 25% 25%;
+    --sidebar-primary: 210 85% 45%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 210 50% 95%;
+    --sidebar-accent-foreground: 215 25% 15%;
+    --sidebar-border: 215 20% 88%;
+    --sidebar-ring: 210 85% 45%;
+  }
+
+  .dark {
+    --background: 215 25% 8%;
+    --foreground: 210 40% 98%;
+
+    --card: 215 25% 10%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 215 25% 10%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 210 85% 55%;
+    --primary-light: 210 85% 65%;
+    --primary-dark: 210 85% 45%;
+    --primary-foreground: 0 0% 100%;
+
+    --success: 145 65% 50%;
+    --success-light: 145 65% 60%;
+    --success-foreground: 0 0% 100%;
+
+    --warning: 35 85% 60%;
+    --warning-light: 35 85% 70%;
+    --warning-foreground: 0 0% 100%;
+
+    --error: 0 75% 60%;
+    --error-light: 0 75% 70%;
+    --error-foreground: 0 0% 100%;
+
+    --secondary: 215 25% 15%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 215 25% 12%;
+    --muted-foreground: 215 15% 60%;
+
+    --accent: 215 25% 15%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 75% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 215 25% 20%;
+    --input: 215 25% 20%;
+    --ring: 210 85% 55%;
+
+    --sidebar-background: 215 25% 6%;
+    --sidebar-foreground: 210 40% 95%;
+    --sidebar-primary: 210 85% 55%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 215 25% 12%;
+    --sidebar-accent-foreground: 210 40% 95%;
+    --sidebar-border: 215 25% 20%;
+    --sidebar-ring: 210 85% 55%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-medium;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-semibold tracking-tight;
+  }
+
+  .ranking-badge {
+    @apply inline-flex items-center justify-center rounded-full text-xs font-medium;
+  }
+
+  .ranking-1 {
+    @apply bg-gradient-warning text-warning-foreground shadow-ranking;
+  }
+
+  .ranking-2 {
+    @apply bg-muted text-muted-foreground border border-border;
+  }
+
+  .ranking-3 {
+    @apply bg-gradient-success text-success-foreground;
+  }
+
+  /* Sidebar improvements */
+  .sidebar-menu-item {
+    @apply text-gray-700 dark:text-gray-200 font-medium;
+  }
+
+  .sidebar-menu-item:hover {
+    @apply text-primary;
+  }
+
+  .sidebar-menu-item.active {
+    @apply text-primary-foreground;
+  }
+
+  /* Force sidebar text visibility */
+  [data-sidebar="menu-button"] {
+    color: hsl(var(--foreground)) !important;
+    margin: 0.25rem 0 !important;
+    border-radius: 0.5rem !important;
+  }
+
+  [data-sidebar="menu-button"]:hover {
+    color: hsl(var(--primary)) !important;
+    background-color: hsl(var(--accent)) !important;
+  }
+
+  [data-sidebar="menu-button"][data-active="true"] {
+    color: hsl(var(--primary-foreground)) !important;
+    background-color: hsl(var(--primary)) !important;
+    font-weight: 600 !important;
+  }
+
+  [data-sidebar="menu-button"][data-active="true"]:hover {
+    background-color: hsl(var(--primary)) !important;
+    color: hsl(var(--primary-foreground)) !important;
+  }
+
+  /* Improve sidebar spacing */
+  [data-sidebar="menu"] {
+    padding: 0.5rem 0 !important;
+  }
+
+  [data-sidebar="menu-item"] {
+    margin: 0.125rem 0 !important;
+  }
+
+  /* Better sidebar visual hierarchy */
+  [data-sidebar="group-label"] {
+    font-weight: 600 !important;
+    letter-spacing: 0.025em !important;
+  }
+
+  [data-sidebar="header"] {
+    padding: 1rem !important;
+  }
+
+  /* Responsive sidebar improvements */
+  .group-data-\[collapsible\=icon\] [data-sidebar="header"] {
+    padding: 0.75rem !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+  }
+
+  .group-data-\[collapsible\=icon\] [data-sidebar="header"] > div {
+    justify-content: center !important;
+    width: 100% !important;
+  }
+
+  .group-data-\[collapsible\=icon\] [data-sidebar="menu-button"] {
+    justify-content: center !important;
+    padding: 0.75rem !important;
+    width: 2.5rem !important;
+    height: 2.5rem !important;
+  }
+
+  .group-data-\[collapsible\=icon\] [data-sidebar="menu-button"] svg {
+    margin: 0 !important;
+  }
+
+  /* Ensure logo is perfectly centered when collapsed */
+  .group-data-\[collapsible\=icon\] [data-sidebar="header"] .flex-shrink-0 {
+    margin: 0 auto !important;
+  }
+
+  /* Alternative approach using grid for perfect centering */
+  .group-data-\[collapsible\=icon\] [data-sidebar="header"] > div {
+    display: grid !important;
+    place-items: center !important;
+    width: 100% !important;
+  }
+
+  /* Active state improvements */
+  [data-sidebar="menu-button"][data-active="true"] {
+    position: relative !important;
+  }
+
+  [data-sidebar="menu-button"][data-active="true"]::before {
+    content: '' !important;
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    bottom: 0 !important;
+    width: 3px !important;
+    background-color: hsl(var(--primary)) !important;
+    border-radius: 0 2px 2px 0 !important;
+  }
+
+  .group-data-\[collapsible\=icon\] [data-sidebar="group-label"] {
+    text-align: center !important;
+    margin-bottom: 0.5rem !important;
+  }
+
+  /* Override sidebar CSS variables */
+  :root {
+    --sidebar-foreground: 215 25% 25%;
+    --sidebar-accent-foreground: 215 25% 25%;
+  }
+
+  .dark {
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-accent-foreground: 210 40% 98%;
+  }
+}
