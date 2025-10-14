@@ -50,22 +50,8 @@ class StudentUpdateRequestSerializer(serializers.ModelSerializer):
         model = Student
         fields = ['first_name', 'last_name', 'email', 'classroom_id', 'date_of_birth', 'gender', 'address', 'parent_phone']
 
-class StudentImportSerializer(serializers.ModelSerializer):
-    username = serializers.CharField(max_length=150)
-    email = serializers.EmailField()
-    password = serializers.CharField(max_length=128)
-    first_name = serializers.CharField(max_length=30)
-    last_name = serializers.CharField(max_length=30)
-    student_code = serializers.CharField(max_length=20)
-    classroom_name = serializers.CharField(max_length=100)
-    date_of_birth = serializers.DateField()
-    gender = serializers.ChoiceField(choices=[('male', 'Nam'), ('female', 'Nữ')])
-    address = serializers.CharField(required=False, allow_blank=True)
-    parent_phone = serializers.CharField(required=False, allow_blank=True, max_length=15)
-    
-    class Meta:
-        model = Student
-        fields = ['username', 'email', 'password', 'first_name', 'last_name', 'student_code', 'classroom_name', 'date_of_birth', 'gender', 'address', 'parent_phone']
+class StudentImportSerializer(serializers.Serializer):
+    file = serializers.FileField()
 
 class StudentImportResultSerializer(serializers.ModelSerializer):
     user = UserResponseSerializer(read_only=True)

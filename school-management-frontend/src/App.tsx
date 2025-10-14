@@ -7,11 +7,14 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
-import Dashboard from "./pages/Dashboard";
 import Classes from "./pages/Classes";
+import MyClasses from "./pages/MyClasses";
 import Students from "./pages/Students";
 import Teachers from "./pages/Teachers";
 import Events from "./pages/Events";
+import EventEditByDate from "./pages/EventEditByDate";
+import EventDetailByDate from "./pages/EventDetailByDate";
+import StudentCreateEvent from "./pages/StudentCreateEvent";
 import Rankings from "./pages/Rankings";
 import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
@@ -27,7 +30,7 @@ const App = () => (
         <AuthProvider>
           <Routes>
             <Route path="/login" element={<Login />} />
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/" element={<Navigate to="/events" replace />} />
             <Route path="/*" element={
               <ProtectedRoute>
                 <SidebarProvider defaultOpen={true}>
@@ -47,7 +50,6 @@ const App = () => (
                         </div>
                       </header>
                       <Routes>
-                        <Route path="/dashboard" element={<Dashboard />} />
                         <Route path="/classes" element={
                           <ProtectedRoute allowedRoles={['admin']}>
                             <Classes />
@@ -68,36 +70,12 @@ const App = () => (
                             <Classes />
                           </ProtectedRoute>
                         } />
-                        <Route path="/students" element={
-                          <ProtectedRoute allowedRoles={['admin', 'teacher']}>
-                            <Students />
+                        <Route path="/my-class" element={
+                          <ProtectedRoute allowedRoles={['teacher', 'student']}>
+                            <MyClasses />
                           </ProtectedRoute>
                         } />
-                        <Route path="/students/create" element={
-                          <ProtectedRoute allowedRoles={['admin', 'teacher']}>
-                            <Students />
-                          </ProtectedRoute>
-                        } />
-                        <Route path="/students/import" element={
-                          <ProtectedRoute allowedRoles={['admin', 'teacher']}>
-                            <Students />
-                          </ProtectedRoute>
-                        } />
-                        <Route path="/students/behavior" element={
-                          <ProtectedRoute allowedRoles={['admin', 'teacher', 'student']}>
-                            <Students />
-                          </ProtectedRoute>
-                        } />
-                        <Route path="/students/:studentId" element={
-                          <ProtectedRoute allowedRoles={['admin', 'teacher']}>
-                            <Students />
-                          </ProtectedRoute>
-                        } />
-                        <Route path="/students/:studentId/edit" element={
-                          <ProtectedRoute allowedRoles={['admin', 'teacher']}>
-                            <Students />
-                          </ProtectedRoute>
-                        } />
+                        
                         <Route path="/teachers" element={
                           <ProtectedRoute allowedRoles={['admin']}>
                             <Teachers />
@@ -124,10 +102,45 @@ const App = () => (
                           </ProtectedRoute>
                         } />
                         <Route path="/events" element={
+                          <ProtectedRoute allowedRoles={['admin', 'teacher', 'student']}>
+                            <Events />
+                          </ProtectedRoute>
+                        } />
+                        <Route path="/events/edit" element={
+                          <ProtectedRoute allowedRoles={['admin', 'teacher', 'student']}>
+                            <EventEditByDate />
+                          </ProtectedRoute>
+                        } />
+                        <Route path="/events/detail" element={
+                          <ProtectedRoute allowedRoles={['admin', 'teacher', 'student']}>
+                            <EventDetailByDate />
+                          </ProtectedRoute>
+                        } />
+        <Route path="/events/create" element={
+          <ProtectedRoute allowedRoles={['admin', 'teacher']}>
+            <Events />
+          </ProtectedRoute>
+        } />
+        <Route path="/student/events/create" element={
+          <ProtectedRoute allowedRoles={['student']}>
+            <StudentCreateEvent />
+          </ProtectedRoute>
+        } />
+                        <Route path="/events/:eventId/edit" element={
                           <ProtectedRoute allowedRoles={['admin', 'teacher']}>
                             <Events />
                           </ProtectedRoute>
                         } />
+        <Route path="/events/types" element={
+          <ProtectedRoute allowedRoles={['admin', 'teacher']}>
+            <Events />
+          </ProtectedRoute>
+        } />
+        <Route path="/events/permissions" element={
+          <ProtectedRoute allowedRoles={['admin', 'teacher']}>
+            <Events />
+          </ProtectedRoute>
+        } />
                         <Route path="/rankings" element={<Rankings />} />
                         <Route path="*" element={<NotFound />} />
                       </Routes>

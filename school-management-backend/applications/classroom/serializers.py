@@ -30,7 +30,7 @@ class ClassroomSerializer(serializers.ModelSerializer):
         model = Classroom
         fields = [
             'id', 'name', 'grade', 'grade_id', 'homeroom_teacher', 
-            'homeroom_teacher_id', 'is_special', 'full_name', 
+            'homeroom_teacher_id', 'full_name', 
             'created_at', 'updated_at'
         ]
         read_only_fields = ['id', 'created_at', 'updated_at']
@@ -87,7 +87,7 @@ class ClassroomListSerializer(serializers.ModelSerializer):
         model = Classroom
         fields = [
             'id', 'name', 'grade', 'homeroom_teacher', 
-            'is_special', 'full_name', 'student_count', 'created_at'
+            'full_name', 'student_count', 'created_at'
         ]
 
     def get_student_count(self, obj):
@@ -103,7 +103,7 @@ class ClassroomCreateRequestSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Classroom
-        fields = ['name', 'grade_id', 'homeroom_teacher_id', 'is_special']
+        fields = ['name', 'grade_id', 'homeroom_teacher_id']
 
     def validate_grade_id(self, value):
         """Validate grade_id tồn tại"""
@@ -143,7 +143,7 @@ class ClassroomUpdateRequestSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Classroom
-        fields = ['name', 'grade_id', 'homeroom_teacher_id', 'is_special']
+        fields = ['name', 'grade_id', 'homeroom_teacher_id']
 
     def validate_grade_id(self, value):
         """Validate grade_id tồn tại"""

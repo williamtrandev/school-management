@@ -28,6 +28,7 @@ import { apiService } from '@/services/api';
 import { useToast } from '@/hooks/use-toast';
 import DeleteConfirmationModal from './DeleteConfirmationModal';
 import { Student } from '@/services/api';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface Classroom {
   id: string;
@@ -37,6 +38,7 @@ interface Classroom {
 
 export default function StudentList() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [students, setStudents] = useState<Student[]>([]);
   const [classrooms, setClassrooms] = useState<Classroom[]>([]);
   const [loading, setLoading] = useState(true);
@@ -47,6 +49,8 @@ export default function StudentList() {
     gender: 'all',
     ordering: 'user__first_name'
   });
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(12);
   const [deleteModal, setDeleteModal] = useState<{
     isOpen: boolean;
     student: Student | null;
@@ -74,6 +78,14 @@ export default function StudentList() {
       // Load classrooms for filter
       const classroomsData = await apiService.getClassrooms();
       setClassrooms(classroomsData);
+
+      // If teacher and no class selected, default to homeroom class
+      if (user?.role === 'teacher' && filters.classroom_id === 'all') {
+        const myClasses = classroomsData.filter((c: any) => c.homeroom_teacher && c.homeroom_teacher.id === user.id);
+        if (myClasses.length > 0) {
+          setFilters(prev => ({ ...prev, classroom_id: myClasses[0].id }));
+        }
+      }
     } catch (error) {
       console.error('Error loading students:', error);
       toast({
@@ -159,10 +171,18 @@ export default function StudentList() {
   const maleCount = students.filter(s => s.gender === 'male').length;
   const femaleCount = students.filter(s => s.gender === 'female').length;
 
+  // Client-side pagination (fallback if backend not paginated)
+  const total = students.length;
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const currentPage = Math.min(page, totalPages);
+  const startIndex = (currentPage - 1) * pageSize;
+  const endIndex = Math.min(startIndex + pageSize, total);
+  const pagedStudents = students.slice(startIndex, endIndex);
+
   return (
     <div className="space-y-6">
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
         <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
@@ -223,7 +243,7 @@ export default function StudentList() {
       {/* Filters */}
       <Card className="border-0 shadow-lg bg-gradient-to-r from-gray-50 to-gray-100">
         <CardHeader>
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
             <div>
               <CardTitle className="flex items-center gap-2">
                 <Filter className="h-5 w-5 text-blue-600" />
@@ -243,7 +263,7 @@ export default function StudentList() {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
             <div className="space-y-2">
               <label className="text-sm font-medium">Tìm kiếm</label>
               <div className="relative">
@@ -314,7 +334,7 @@ export default function StudentList() {
           </div>
         </CardContent>
       </Card>
-      <div className="flex flex-col sm:flex-row justify-end items-start sm:items-center gap-4">
+      <div className="flex flex-col sm:flex-row justify-end items-start sm:items-center gap-3 sm:gap-4">
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2 bg-muted rounded-lg p-1">
               <Button
@@ -376,8 +396,8 @@ export default function StudentList() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="overflow-x-auto">
-              <Table>
+            <div className="overflow-x-auto -mx-4 sm:mx-0">
+              <Table className="min-w-[720px]">
                 <TableHeader>
                   <TableRow className="bg-muted/50">
                     <TableHead className="font-semibold">Học Sinh</TableHead>
@@ -390,7 +410,7 @@ export default function StudentList() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {students.map((student) => (
+                  {pagedStudents.map((student) => (
                     <TableRow key={student.id} className="hover:bg-muted/30 transition-colors">
                       <TableCell>
                         <div className="flex items-center gap-3">
@@ -471,7 +491,7 @@ export default function StudentList() {
       ) : (
         // Grid View
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {students.map((student) => (
+          {pagedStudents.map((student) => (
             <Card key={student.id} className="group hover:shadow-xl transition-all duration-300 border-0 shadow-lg">
               <CardContent className="p-6">
                 <div className="text-center mb-4">
@@ -535,6 +555,33 @@ export default function StudentList() {
               </CardContent>
             </Card>
           ))}
+        </div>
+      )}
+
+      {/* Pagination */}
+      {students.length > 0 && (
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div className="text-sm text-muted-foreground">
+            Hiển thị <span className="font-medium">{total === 0 ? 0 : startIndex + 1}</span>–<span className="font-medium">{endIndex}</span> trong <span className="font-medium">{total}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Select value={String(pageSize)} onValueChange={(v) => { setPageSize(Number(v)); setPage(1); }}>
+              <SelectTrigger className="h-8 w-[110px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="8">8 / trang</SelectItem>
+                <SelectItem value="12">12 / trang</SelectItem>
+                <SelectItem value="24">24 / trang</SelectItem>
+                <SelectItem value="48">48 / trang</SelectItem>
+              </SelectContent>
+            </Select>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" disabled={currentPage <= 1} onClick={() => setPage(p => Math.max(1, p - 1))}>Trước</Button>
+              <div className="text-sm">{currentPage}/{totalPages}</div>
+              <Button variant="outline" size="sm" disabled={currentPage >= totalPages} onClick={() => setPage(p => Math.min(totalPages, p + 1))}>Sau</Button>
+            </div>
+          </div>
         </div>
       )}
 

@@ -11,6 +11,10 @@ urlpatterns = [
     path('/<uuid:id>/update', views.student_update, name='student-update'),
     path('/<uuid:id>/delete', views.student_delete, name='student-delete'),
     
+    # Classroom-specific operations
+    path('/classroom/<uuid:classroom_id>', views.students_by_classroom, name='students-by-classroom'),
+    path('/my-classroom', views.students_of_my_classroom, name='students-of-my-classroom'),
+    
     # Statistics
     path('/stats', views.student_stats, name='student-stats'),
     

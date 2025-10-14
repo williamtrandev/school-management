@@ -7,8 +7,9 @@ import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Alert, AlertDescription } from './ui/alert';
 import { Loader2, Plus, X } from 'lucide-react';
-import { toast } from 'sonner';
-import apiService, { EventCreateRequest, EventType, Classroom, Student } from '../services/api';
+import { useToast } from '@/hooks/use-toast';
+import { apiService } from '@/services/api';
+import { EventCreateRequest, EventType, Classroom, Student } from '@/services/api';
 
 interface EventFormProps {
   onSuccess?: () => void;
@@ -19,6 +20,7 @@ interface EventFormProps {
 const EventForm: React.FC<EventFormProps> = ({ onSuccess, onCancel, initialData }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const { toast } = useToast();
   
   // Form data
   const [formData, setFormData] = useState<EventCreateRequest>({
@@ -49,7 +51,11 @@ const EventForm: React.FC<EventFormProps> = ({ onSuccess, onCancel, initialData 
         setClassrooms(classes);
       } catch (error) {
         console.error('Error loading options:', error);
-        toast.error('Không thể tải dữ liệu');
+        toast({
+          title: 'Lỗi',
+          description: 'Không thể tải dữ liệu',
+          variant: 'destructive',
+        });
       }
     };
 
@@ -80,11 +86,18 @@ const EventForm: React.FC<EventFormProps> = ({ onSuccess, onCancel, initialData 
 
     try {
       await apiService.createEvent(formData);
-      toast.success('Tạo sự kiện thành công!');
+      toast({
+        title: 'Thành công',
+        description: 'Tạo sự kiện thành công!',
+      });
       onSuccess?.();
     } catch (error: any) {
       setError(error.response?.data?.error || 'Tạo sự kiện thất bại');
-      toast.error('Tạo sự kiện thất bại');
+      toast({
+        title: 'Lỗi',
+        description: 'Tạo sự kiện thất bại',
+        variant: 'destructive',
+      });
     } finally {
       setIsLoading(false);
     }
@@ -179,14 +192,14 @@ const EventForm: React.FC<EventFormProps> = ({ onSuccess, onCancel, initialData 
           <div className="space-y-2">
             <Label htmlFor="student">Học sinh (tùy chọn)</Label>
             <Select
-              value={formData.student_id || ''}
-              onValueChange={(value) => handleInputChange('student_id', value || undefined)}
+              value={formData.student_id || 'all'}
+              onValueChange={(value) => handleInputChange('student_id', value === 'all' ? undefined : value)}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Chọn học sinh (để trống nếu là sự kiện của cả lớp)" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Cả lớp</SelectItem>
+                <SelectItem value="all">Cả lớp</SelectItem>
                 {students.map((student) => (
                   <SelectItem key={student.id} value={student.id}>
                     {student.student_code} - {student.user.full_name || `${student.user.first_name} ${student.user.last_name}`}

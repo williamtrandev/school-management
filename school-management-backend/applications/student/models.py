@@ -8,7 +8,7 @@ from applications.classroom.models import Classroom
 class Student(models.Model):
     """Học sinh"""
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='student_profile')
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='student')
     student_code = models.CharField(max_length=20, unique=True)  # Mã học sinh
     classroom = models.ForeignKey(Classroom, on_delete=models.CASCADE, related_name='students')
     date_of_birth = models.DateField()

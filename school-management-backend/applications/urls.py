@@ -18,6 +18,7 @@ urlpatterns = [
     
     # Teacher app
     path('/teachers', include('applications.teacher.urls')),
+    
     # path('api/', include('applications.grade.urls')),
     # path('api/', include('applications.notification.urls')),
     # path('api/', include('applications.point_rule.urls')),

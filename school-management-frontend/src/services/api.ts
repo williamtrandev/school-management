@@ -125,7 +125,6 @@ export interface Classroom {
   name: string;
   grade: Grade;
   homeroom_teacher?: User;
-  is_special: boolean;
   created_at: string;
   updated_at: string;
   full_name: string;
@@ -177,7 +176,31 @@ export interface EventType {
   id: string;
   name: string;
   description?: string;
+  category: 'discipline' | 'hygiene' | 'school_rules' | 'academic' | 'behavior';
+  category_display: string;
+  allowed_roles: 'student' | 'teacher' | 'both';
+  allowed_roles_display: string;
+  default_points: number;
   is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface StudentEventPermission {
+  id: string;
+  student: string;
+  student_name: string;
+  student_code: string;
+  classroom: string;
+  classroom_name: string;
+  granted_by: string;
+  granted_by_name: string;
+  is_active: boolean;
+  granted_at: string;
+  expires_at?: string;
+  notes?: string;
+  is_expired: boolean;
+  is_valid: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -185,21 +208,29 @@ export interface EventType {
 export interface Event {
   id: string;
   event_type: EventType;
-  classroom: Classroom;
+  classroom: string | Classroom;
+  classroom_name?: string;
   student?: Student;
+  student_name?: string;
   date: string;
   period?: number;
   points: number;
   description?: string;
-  recorded_by: User;
+  recorded_by: string | User;
+  recorded_by_name?: string;
+  status?: 'pending' | 'approved' | 'rejected';
+  approved_by?: string | User;
+  approved_by_name?: string;
+  approved_at?: string;
+  rejection_notes?: string;
   created_at: string;
   updated_at: string;
 }
 
 export interface EventCreateRequest {
-  event_type_id: string;
-  classroom_id: string;
-  student_id?: string;
+  event_type: string;
+  classroom: string;
+  student?: string;
   date: string;
   period?: number;
   points: number;
@@ -208,6 +239,21 @@ export interface EventCreateRequest {
 
 export interface EventBulkCreateRequest {
   events: EventCreateRequest[];
+}
+
+export interface EventBulkSyncRequest {
+  classroom?: string;
+  date?: string;
+  period?: number | null;
+  events: EventCreateRequest[];
+}
+
+export interface EventBulkSyncResponse {
+  message: string;
+  created_count: number;
+  updated_count: number;
+  deleted_count: number;
+  events: Event[];
 }
 
 // Week Summary Types
@@ -312,6 +358,47 @@ class ApiService {
     return response.data as { message: string };
   }
 
+  // Student Event Permission APIs
+  async getStudentEventPermissions(params?: {
+    classroom_id?: string;
+    is_active?: boolean;
+  }): Promise<StudentEventPermission[]> {
+    const response = await apiClient.get('/events/student-permissions', { params });
+    return response.data as StudentEventPermission[];
+  }
+
+  async createStudentEventPermission(data: {
+    student: string;
+    classroom: string;
+    expires_at?: string;
+    notes?: string;
+  }): Promise<StudentEventPermission> {
+    const response = await apiClient.post('/events/student-permissions/create', data);
+    return response.data as StudentEventPermission;
+  }
+
+  async updateStudentEventPermission(id: string, data: {
+    is_active?: boolean;
+    expires_at?: string;
+    notes?: string;
+  }): Promise<StudentEventPermission> {
+    const response = await apiClient.put(`/events/student-permissions/${id}/update`, data);
+    return response.data as StudentEventPermission;
+  }
+
+  async deleteStudentEventPermission(id: string): Promise<void> {
+    await apiClient.delete(`/events/student-permissions/${id}/delete`);
+  }
+
+  async checkStudentEventPermission(studentId: string): Promise<{
+    has_permission: boolean;
+    reason?: string;
+    permission?: StudentEventPermission;
+  }> {
+    const response = await apiClient.get(`/events/student-permissions/check/${studentId}`);
+    return response.data as { has_permission: boolean; reason?: string; permission?: StudentEventPermission };
+  }
+
   // Event APIs
   async getEvents(params?: {
     classroom_id?: string;
@@ -358,6 +445,35 @@ class ApiService {
     };
   }
 
+  async bulkCreateEventsStudent(data: EventBulkCreateRequest): Promise<{
+    message: string;
+    created_count: number;
+    events: Event[];
+  }> {
+    const response = await apiClient.post('/events/bulk_create_student', data);
+    return response.data as {
+      message: string;
+      created_count: number;
+      events: Event[];
+    };
+  }
+
+  async bulkSyncEvents(data: EventBulkSyncRequest): Promise<EventBulkSyncResponse> {
+    const response = await apiClient.post('/events/bulk_sync', data);
+    return response.data as EventBulkSyncResponse;
+  }
+
+  async bulkApproveEvents(data: {
+    classroom?: string;
+    date?: string;
+    period?: number | null;
+    event_ids?: string[];
+    rejection_notes?: string;
+  }): Promise<{ message: string; updated_count: number }> {
+    const response = await apiClient.post('/events/bulk_approve', data);
+    return response.data as { message: string; updated_count: number };
+  }
+
   // Week Summary APIs (to be implemented in backend)
   async getWeekSummaries(params?: {
     classroom_id?: string;
@@ -400,7 +516,6 @@ class ApiService {
     name: string;
     grade_id: string;
     homeroom_teacher_id?: string;
-    is_special?: boolean;
   }): Promise<Classroom> {
     const response = await apiClient.post('/classrooms/create', data);
     return response.data as Classroom;
@@ -410,7 +525,6 @@ class ApiService {
     name?: string;
     grade_id?: string;
     homeroom_teacher_id?: string;
-    is_special?: boolean;
   }): Promise<Classroom> {
     const response = await apiClient.patch(`/classrooms/${id}/update`, data);
     return response.data as Classroom;
@@ -455,10 +569,62 @@ class ApiService {
     search?: string; 
     gender?: string;
     ordering?: string;
-  }): Promise<Student[]> {
+    page?: number;
+    page_size?: number;
+  }): Promise<{ results: Student[]; total: number; page: number; page_size: number; total_pages: number; }> {
     const response = await apiClient.get('/students', { params });
-    return response.data as Student[];
+    return response.data as { results: Student[]; total: number; page: number; page_size: number; total_pages: number; };
   }
+
+  async getStudentsByClassroom(classroomId: string): Promise<{ students: Student[] }> {
+    const response = await apiClient.get('/students', { params: { classroom_id: classroomId, page_size: 1000 } });
+    const data = response.data as { results: Student[] };
+    return { students: data.results || [] };
+  }
+
+  async getMyClassroomStudents(params?: {
+    page?: number;
+    page_size?: number;
+    search?: string;
+    gender?: string;
+  }): Promise<{
+    classroom: Classroom;
+    results: Student[];
+    total: number;
+    page: number;
+    page_size: number;
+    total_pages: number;
+    male_count: number;
+    female_count: number;
+  }> {
+    // For teachers, use the general student list API which filters by homeroom teacher
+    const response = await apiClient.get('/students', { params });
+    const data = response.data as { results: Student[]; total: number; page: number; page_size: number; total_pages: number; };
+    const students = data.results;
+    
+    // Get classroom info from first student (if any)
+    let classroom: Classroom | null = null;
+    if (students.length > 0) {
+      classroom = students[0].classroom;
+    }
+    
+    // Calculate gender counts from current page results only
+    const male_count = students.filter(s => s.gender === 'male').length;
+    const female_count = students.filter(s => s.gender === 'female').length;
+    
+    return {
+      classroom: classroom || {} as Classroom,
+      results: students,
+      total: data.total,
+      page: data.page,
+      page_size: data.page_size,
+      total_pages: data.total_pages,
+      male_count,
+      female_count,
+    };
+  }
+
+
 
   async getStudent(id: string): Promise<Student> {
     const response = await apiClient.get(`/students/${id}`);
@@ -647,9 +813,44 @@ class ApiService {
   }
 
   async getClassRankings(params?: { week_number?: number; year?: number }): Promise<WeekSummary[]> {
-    const response = await apiClient.get('/week-summaries/dashboard/rankings', { params });
+    const response = await apiClient.get('/week-summaries/rankings', { params });
     return response.data as WeekSummary[];
   }
+
+  async getMonthlyRankings(params: { month: number; year: number }): Promise<WeekSummary[]> {
+    const response = await apiClient.get('/week-summaries/rankings/monthly', { params });
+    return response.data as WeekSummary[];
+  }
+
+  async getRealtimeRankings(params?: {
+    week_number?: number;
+    year?: number;
+    start_date?: string;
+    end_date?: string;
+  }): Promise<WeekSummary[]> {
+    const response = await apiClient.get('/week-summaries/rankings/realtime', { params });
+    return response.data as WeekSummary[];
+  }
+
+  async getYearlyRankings(params: { year: number }): Promise<WeekSummary[]> {
+    const response = await apiClient.get('/week-summaries/rankings/yearly', { params });
+    return response.data as WeekSummary[];
+  }
+
+  async getTopPerformers(params?: { week_number?: number; year?: number }): Promise<{
+    best_class: Classroom | null;
+    most_improved: Classroom | null;
+    consistent_performers: Classroom[];
+  }> {
+    const response = await apiClient.get('/week-summaries/top-performers', { params });
+    return response.data as {
+      best_class: Classroom | null;
+      most_improved: Classroom | null;
+      consistent_performers: Classroom[];
+    };
+  }
+
+  // Removed generateWeekSummary - using real-time computation instead
 
   // Behavior Record APIs
   async getBehaviorRecords(params?: { 

@@ -31,6 +31,8 @@ from applications.user_management.models import User
 from applications.classroom.models import Classroom
 from django.db import models
 
+from ..classroom.serializers import ClassroomSerializer
+
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
@@ -70,8 +72,29 @@ def student_list(request):
     ordering = request.query_params.get('ordering', 'user__first_name')
     queryset = queryset.order_by(ordering)
     
-    serializer = StudentListSerializer(queryset, many=True)
-    return Response(serializer.data)
+    # Pagination
+    try:
+        page = int(request.query_params.get('page', '1'))
+        page_size = int(request.query_params.get('page_size', '12'))
+    except ValueError:
+        page = 1
+        page_size = 12
+    page = max(1, page)
+    page_size = max(1, min(100, page_size))
+
+    total = queryset.count()
+    start = (page - 1) * page_size
+    end = start + page_size
+    items = list(queryset[start:end])
+
+    serializer = StudentListSerializer(items, many=True)
+    return Response({
+        'results': serializer.data,
+        'total': total,
+        'page': page,
+        'page_size': page_size,
+        'total_pages': (total + page_size - 1) // page_size,
+    })
 
 
 @api_view(['GET'])
@@ -238,11 +261,11 @@ def student_import_excel(request):
             else:
                 df = pd.read_excel(file, engine='xlrd')
             
-            # Validate columns
+            # Validate columns (address, parent_phone are optional)
             required_columns = [
-                'student_code', 'username', 'email', 'password', 
-                'first_name', 'last_name', 'classroom_name', 
-                'date_of_birth', 'gender', 'address', 'parent_phone'
+                'student_code', 'username', 'email', 'password',
+                'first_name', 'last_name', 'classroom_name',
+                'date_of_birth', 'gender'
             ]
             
             missing_columns = [col for col in required_columns if col not in df.columns]
@@ -334,8 +357,8 @@ def student_import_excel(request):
                             classroom=classroom,
                             date_of_birth=date_of_birth,
                             gender=str(row['gender']).strip().lower(),
-                            address=str(row.get('address', '')).strip(),
-                            parent_phone=str(row.get('parent_phone', '')).strip()
+                            address=str(row.get('address', '')).strip() if 'address' in df.columns else '',
+                            parent_phone=str(row.get('parent_phone', '')).strip() if 'parent_phone' in df.columns else ''
                         )
                         
                         success_count += 1
@@ -400,6 +423,147 @@ def student_import_template(request):
     response['Content-Disposition'] = 'attachment; filename="student_import_template.xlsx"'
     return response
 
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def students_by_classroom(request, classroom_id):
+    """API lấy danh sách học sinh theo lớp"""
+    # Kiểm tra xem lớp có tồn tại không
+    try:
+        classroom = Classroom.objects.get(id=classroom_id)
+    except Classroom.DoesNotExist:
+        return Response(
+            {'error': 'Lớp học không tồn tại'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+    
+    # Kiểm tra quyền truy cập
+    user = request.user
+    if user.role == 'student':
+        # Học sinh chỉ có thể xem thông tin lớp của mình
+        try:
+            student = Student.objects.get(user=user)
+            if str(student.classroom.id) != str(classroom_id):
+                return Response(
+                    {'error': 'Không có quyền truy cập lớp này'},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+        except Student.DoesNotExist:
+            return Response(
+                {'error': 'Không tìm thấy thông tin học sinh'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+    elif user.role == 'teacher':
+        # Giáo viên chỉ có thể xem học sinh trong lớp mình chủ nhiệm
+        if classroom.homeroom_teacher != user:
+            return Response(
+                {'error': 'Bạn không phải giáo viên chủ nhiệm của lớp này'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+    # Admin có thể xem tất cả
+    
+    # Base queryset for class-wide stats (unfiltered)
+    base_students = Student.objects.filter(classroom_id=classroom_id).select_related(
+        'user', 'classroom', 'classroom__grade'
+    )
+    # Display queryset (filtered/sorted)
+    students = base_students.order_by('user__first_name', 'user__last_name')
+    
+    # Apply search filter if provided
+    search = request.query_params.get('search')
+    if search:
+        students = students.filter(
+            Q(user__first_name__icontains=search) |
+            Q(user__last_name__icontains=search) |
+            Q(student_code__icontains=search) |
+            Q(user__email__icontains=search)
+        )
+    
+    # Apply gender filter if provided
+    gender = request.query_params.get('gender')
+    if gender:
+        students = students.filter(gender=gender)
+    
+    # Pagination (on filtered display queryset)
+    try:
+        page = int(request.query_params.get('page', '1'))
+        page_size = int(request.query_params.get('page_size', '12'))
+    except ValueError:
+        page = 1
+        page_size = 12
+    page = max(1, page)
+    page_size = max(1, min(100, page_size))
+
+    total = students.count()
+    start = (page - 1) * page_size
+    end = start + page_size
+    items = list(students[start:end])
+
+    serializer = StudentListSerializer(items, many=True)
+    
+    # Thêm thông tin lớp học
+    classroom_serializer = ClassroomSerializer(classroom)
+    
+    response_data = {
+        'classroom': classroom_serializer.data,
+        'results': serializer.data,
+        'total': total,
+        'page': page,
+        'page_size': page_size,
+        'total_pages': (total + page_size - 1) // page_size,
+        # Class-wide fixed stats (not affected by filters)
+        'class_total': base_students.count(),
+        'class_male_count': base_students.filter(gender='male').count(),
+        'class_female_count': base_students.filter(gender='female').count(),
+    }
+    
+    return Response(response_data)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def students_of_my_classroom(request):
+    """Trả về lớp của học sinh đang đăng nhập và danh sách học sinh trong lớp đó"""
+    user = request.user
+    if user.role != 'student':
+        return Response({'error': 'Chỉ áp dụng cho học sinh'}, status=status.HTTP_403_FORBIDDEN)
+
+    try:
+        student = Student.objects.select_related('classroom', 'classroom__grade').get(user=user)
+    except Student.DoesNotExist:
+        return Response({'error': 'Không tìm thấy thông tin học sinh'}, status=status.HTTP_404_NOT_FOUND)
+
+    classroom = student.classroom
+    students = Student.objects.filter(classroom=classroom).select_related('user', 'classroom', 'classroom__grade').order_by('user__first_name', 'user__last_name')
+
+    # Pagination
+    try:
+        page = int(request.query_params.get('page', '1'))
+        page_size = int(request.query_params.get('page_size', '12'))
+    except ValueError:
+        page = 1
+        page_size = 12
+    page = max(1, page)
+    page_size = max(1, min(100, page_size))
+
+    total = students.count()
+    start = (page - 1) * page_size
+    end = start + page_size
+    items = list(students[start:end])
+
+    serializer = StudentListSerializer(items, many=True)
+    classroom_serializer = ClassroomSerializer(classroom)
+
+    return Response({
+        'classroom': classroom_serializer.data,
+        'results': serializer.data,
+        'total': total,
+        'page': page,
+        'page_size': page_size,
+        'total_pages': (total + page_size - 1) // page_size,
+        'male_count': students.filter(gender='male').count(),
+        'female_count': students.filter(gender='female').count(),
+    })
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])

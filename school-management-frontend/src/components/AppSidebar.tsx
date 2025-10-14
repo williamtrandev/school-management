@@ -4,8 +4,6 @@ import {
   Users, 
   GraduationCap, 
   Calendar, 
-  BarChart3, 
-  Settings,
   School,
   Trophy,
   ClipboardCheck,
@@ -32,27 +30,21 @@ import {
 // Menu items based on user role
 
 const adminItems = [
-  { title: "Tổng quan", url: "/dashboard", icon: LayoutDashboard },
+  { title: "Sự kiện thi đua", url: "/events", icon: Activity },
   { title: "Quản lý lớp", url: "/classes", icon: School },
   { title: "Học sinh", url: "/students", icon: GraduationCap },
   { title: "Giáo viên", url: "/teachers", icon: Users },
-  { title: "Sự kiện thi đua", url: "/events", icon: Activity },
   { title: "Bảng xếp hạng", url: "/rankings", icon: Trophy },
-  { title: "Báo cáo", url: "/reports", icon: BarChart3 },
-  { title: "Cấu hình", url: "/settings", icon: Settings },
 ];
 
 const teacherItems = [
-  { title: "Tổng quan", url: "/dashboard", icon: LayoutDashboard },
-  { title: "Lớp của tôi", url: "/my-class", icon: School },
-  { title: "Học sinh", url: "/students", icon: GraduationCap },
   { title: "Sự kiện thi đua", url: "/events", icon: Activity },
+  { title: "Lớp của tôi", url: "/my-class", icon: School },
   { title: "Bảng xếp hạng", url: "/rankings", icon: Trophy },
-  { title: "Báo cáo", url: "/reports", icon: BarChart3 },
 ];
 
 const studentItems = [
-  { title: "Tổng quan", url: "/dashboard", icon: LayoutDashboard },
+  { title: "Sự kiện thi đua", url: "/events", icon: Activity },
   { title: "Lớp của tôi", url: "/my-class", icon: School },
   { title: "Bảng xếp hạng", url: "/rankings", icon: Trophy },
 ];
@@ -79,8 +71,8 @@ export function AppSidebar() {
   const items = getMenuItems(user?.role || "admin");
 
   const isActive = (path: string) => {
-    if (path === "/dashboard") {
-      return currentPath === "/dashboard";
+    if (path === "/rankings") {
+      return currentPath === "/rankings";
     }
     return currentPath.startsWith(path);
   };
@@ -143,7 +135,6 @@ export function AppSidebar() {
                   >
                     <NavLink 
                       to={item.url} 
-                      end={item.url === "/dashboard"}
                       className={`${getNavCls} py-3`}
                       style={{
                         color: isActive(item.url) ? 'hsl(var(--primary-foreground))' : 'hsl(var(--foreground))'

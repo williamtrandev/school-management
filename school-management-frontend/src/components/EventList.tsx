@@ -8,8 +8,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
 import { Alert, AlertDescription } from './ui/alert';
 import { Loader2, Plus, Search, Filter, Edit, Trash2, Eye } from 'lucide-react';
-import { toast } from 'sonner';
-import apiService, { Event, EventType, Classroom } from '../services/api';
+import { useToast } from '@/hooks/use-toast';
+import { apiService } from '@/services/api';
+import { Event, EventType, Classroom } from '@/services/api';
 import EventForm from './EventForm';
 import DeleteConfirmationModal from './DeleteConfirmationModal';
 
@@ -23,11 +24,12 @@ const EventList: React.FC<EventListProps> = ({ onRefresh }) => {
   const [error, setError] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
+  const { toast } = useToast();
 
   // Filter states
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedClassroom, setSelectedClassroom] = useState('');
-  const [selectedEventType, setSelectedEventType] = useState('');
+  const [selectedClassroom, setSelectedClassroom] = useState('A1');
+  const [selectedEventType, setSelectedEventType] = useState('A1');
   const [selectedDate, setSelectedDate] = useState('');
 
   // Options for filters
@@ -64,7 +66,11 @@ const EventList: React.FC<EventListProps> = ({ onRefresh }) => {
     } catch (error) {
       console.error('Error loading data:', error);
       setError('Không thể tải dữ liệu');
-      toast.error('Không thể tải dữ liệu');
+      toast({
+        title: 'Lỗi',
+        description: 'Không thể tải dữ liệu',
+        variant: 'destructive',
+      });
     } finally {
       setIsLoading(false);
     }
@@ -85,13 +91,20 @@ const EventList: React.FC<EventListProps> = ({ onRefresh }) => {
 
     try {
       await apiService.deleteEvent(deleteModal.event.id);
-      toast.success('Xóa sự kiện thành công!');
+      toast({
+        title: 'Thành công',
+        description: 'Xóa sự kiện thành công!',
+      });
       loadData();
       onRefresh?.();
       setDeleteModal({ isOpen: false, event: null, isLoading: false });
     } catch (error) {
       console.error('Error deleting event:', error);
-      toast.error('Xóa sự kiện thất bại');
+      toast({
+        title: 'Lỗi',
+        description: 'Xóa sự kiện thất bại',
+        variant: 'destructive',
+      });
       setDeleteModal(prev => ({ ...prev, isLoading: false }));
     }
   };
@@ -120,8 +133,8 @@ const EventList: React.FC<EventListProps> = ({ onRefresh }) => {
       event.classroom.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (event.student && (event.student.user.full_name || `${event.student.user.first_name} ${event.student.user.last_name}`).toLowerCase().includes(searchTerm.toLowerCase()));
 
-    const matchesClassroom = selectedClassroom === '' || event.classroom.id === selectedClassroom;
-    const matchesEventType = selectedEventType === '' || event.event_type.id === selectedEventType;
+    const matchesClassroom = selectedClassroom === 'all' || selectedClassroom === '' || event.classroom.id === selectedClassroom;
+    const matchesEventType = selectedEventType === 'all' || selectedEventType === '' || event.event_type.id === selectedEventType;
     const matchesDate = selectedDate === '' || event.date === selectedDate;
 
     return matchesSearch && matchesClassroom && matchesEventType && matchesDate;
@@ -216,7 +229,7 @@ const EventList: React.FC<EventListProps> = ({ onRefresh }) => {
                   <SelectValue placeholder="Tất cả lớp" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Tất cả lớp</SelectItem>
+                  <SelectItem value="all">Tất cả lớp</SelectItem>
                   {classrooms.map((classroom) => (
                     <SelectItem key={classroom.id} value={classroom.id}>
                       {classroom.full_name}
@@ -233,7 +246,7 @@ const EventList: React.FC<EventListProps> = ({ onRefresh }) => {
                   <SelectValue placeholder="Tất cả loại" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Tất cả loại</SelectItem>
+                  <SelectItem value="all">Tất cả loại</SelectItem>
                   {eventTypes.map((type) => (
                     <SelectItem key={type.id} value={type.id}>
                       {type.name}

@@ -15,7 +15,7 @@ class Classroom(models.Model):
         related_name='homeroom_classrooms',
         limit_choices_to={'role': 'teacher'}
     )
-    is_special = models.BooleanField(default=False)  # Lớp đặc biệt (12A1, 11A1, 10A1)
+    # Removed is_special field - no longer needed
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

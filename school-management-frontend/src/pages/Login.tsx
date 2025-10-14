@@ -43,7 +43,7 @@ const Login: React.FC = () => {
     try {
       await login(loginData);
       toast.success('Đăng nhập thành công!');
-      navigate('/dashboard');
+      navigate('/events');
     } catch (error: any) {
       setError(error.response?.data?.error || 'Đăng nhập thất bại');
       toast.error('Đăng nhập thất bại');
@@ -72,7 +72,7 @@ const Login: React.FC = () => {
       };
       await register(registerPayload);
       toast.success('Đăng ký thành công!');
-      navigate('/dashboard');
+      navigate('/events');
     } catch (error: any) {
       setError(error.response?.data?.error || 'Đăng ký thất bại');
       toast.error('Đăng ký thất bại');
