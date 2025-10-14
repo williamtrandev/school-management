@@ -125,6 +125,30 @@ export default function ClassroomList() {
     return grade ? grade.name : '';
   };
 
+  // Parse classroom code like 10A1 → { grade: 10, letter: 'A', number: 1 }
+  function parseClassCode(className: string) {
+    const compact = (className || '').replace(/\s+/g, '');
+    const match = compact.match(/^(\d+)([A-Za-zÀ-ỹ]+)?(\d+)?/i);
+    const grade = match && match[1] ? parseInt(match[1], 10) : Number.MAX_SAFE_INTEGER;
+    const letter = match && match[2] ? match[2].toUpperCase() : '';
+    const number = match && match[3] ? parseInt(match[3], 10) : Number.MAX_SAFE_INTEGER;
+    return { grade, letter, number };
+  }
+
+  function compareClassroomsByCode(a: Classroom, b: Classroom) {
+    const A = parseClassCode(a.full_name || '');
+    const B = parseClassCode(b.full_name || '');
+    if (A.grade !== B.grade) return A.grade - B.grade;
+    if (A.letter !== B.letter) return A.letter.localeCompare(B.letter, 'vi');
+    if (A.number !== B.number) return A.number - B.number;
+    return (a.full_name || '').localeCompare(b.full_name || '', 'vi');
+  }
+
+  // Client-side search then custom sort by class code
+  const displayedClassrooms = (classrooms || [])
+    .filter(c => (filters.search || '').trim() === '' || (c.full_name || '').toLowerCase().includes(filters.search.toLowerCase()))
+    .sort(compareClassroomsByCode);
+
   return (
     <Card>
       <CardHeader>
@@ -223,12 +247,11 @@ export default function ClassroomList() {
                   </TableCell>
                 </TableRow>
               ) : (
-                classrooms.map((classroom) => (
+                displayedClassrooms.map((classroom) => (
                   <TableRow key={classroom.id}>
                     <TableCell className="font-medium">
                       <div className="flex items-center gap-2">
                         {classroom.full_name}
-                        {classroom.is_special && <GraduationCap className="h-4 w-4 text-yellow-500" />}
                       </div>
                     </TableCell>
                     <TableCell>Khối {classroom.grade.name}</TableCell>
@@ -245,8 +268,8 @@ export default function ClassroomList() {
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <Badge variant={classroom.is_special ? "default" : "secondary"}>
-                        {classroom.is_special ? "Đặc biệt" : "Thường"}
+                      <Badge variant="secondary">
+                        Lớp học
                       </Badge>
                     </TableCell>
                     <TableCell>

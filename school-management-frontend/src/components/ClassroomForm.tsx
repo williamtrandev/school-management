@@ -17,8 +17,7 @@ export default function ClassroomForm() {
   const [formData, setFormData] = useState({
     name: '',
     grade_id: '',
-    homeroom_teacher_id: '',
-    is_special: false
+    homeroom_teacher_id: ''
   });
   const [grades, setGrades] = useState<Grade[]>([]);
   const [teachers, setTeachers] = useState<User[]>([]);
@@ -217,14 +216,7 @@ export default function ClassroomForm() {
             </Select>
           </div>
 
-          <div className="flex items-center space-x-2">
-            <Switch
-              id="is_special"
-              checked={formData.is_special}
-              onCheckedChange={(checked) => handleInputChange('is_special', checked)}
-            />
-            <Label htmlFor="is_special">Lớp đặc biệt</Label>
-          </div>
+          {/* Removed is_special field - no longer needed */}
 
           <div className="flex justify-end space-x-2 pt-4">
             <Button type="button" variant="outline" onClick={handleCancel}>
